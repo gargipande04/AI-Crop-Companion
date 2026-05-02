@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crop Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lato:wght@300;400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --parchment: #f7f2e8;
+  --vellum:    #ede7d6;
+  --ink:       #1c2b1a;
+  --faded:     #5a6b57;
+  --moss:      #2e5e35;
+  --sage:      #4a8c52;
+  --straw:     #c4a84a;
+  --rust:      #b5471d;
+  --sky:       #3a7bb5;
+  --border:    rgba(46,94,53,0.18);
+  --shadow:    0 4px 32px rgba(28,43,26,0.10);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--parchment);
+  color: var(--ink);
+  font-family: 'Lato', sans-serif;
+  line-height: 1.6;
+  background-image:
+    linear-gradient(rgba(46,94,53,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46,94,53,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* ── NAV ── */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(247,242,232,0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px;
+}
+.nav-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; color: var(--ink);
+  text-decoration: none; letter-spacing: -0.01em;
+}
+.nav-links { display: flex; gap: 32px; align-items: center; }
+.nav-links a {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--faded);
+  text-decoration: none; transition: color .2s;
+}
+.nav-links a:hover { color: var(--moss); }
+.nav-cta {
+  background: var(--moss) !important; color: #fff !important;
+  padding: 8px 18px; border-radius: 3px;
+}
+.nav-cta:hover { background: #24491f !important; }
+
+/* ── HERO ── */
+.hero {
+  max-width: 1100px; margin: 0 auto;
+  padding: 80px 40px 60px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+}
+@media (max-width: 800px) { .hero { grid-template-columns: 1fr; padding: 50px 24px; } }
+
+.hero-kicker {
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--moss); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-kicker::before { content: ''; width: 30px; height: 1px; background: var(--moss); }
+
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(36px, 5vw, 58px);
+  line-height: 1.08; letter-spacing: -0.02em;
+  color: var(--ink); margin-bottom: 24px;
+}
+.hero h1 em { font-style: italic; color: var(--moss); }
+
+.hero-body {
+  font-size: 16px; color: var(--faded); line-height: 1.75;
+  margin-bottom: 36px; max-width: 480px;
+}
+
+.hero-actions { display: flex; gap: 14px; flex-wrap: wrap; }
+
+.btn-primary {
+  display: inline-block; padding: 14px 32px;
+  background: var(--moss); color: #fff;
+  font-family: 'Playfair Display', serif; font-size: 16px; font-style: italic;
+  text-decoration: none; border-radius: 3px;
+  transition: background .2s, transform .15s; letter-spacing: 0.01em;
+}
+.btn-primary:hover { background: #24491f; transform: translateY(-1px); }
+
+.btn-secondary {
+  display: inline-block; padding: 14px 32px;
+  background: transparent; color: var(--moss);
+  font-family: 'Courier Prime', monospace; font-size: 12px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  text-decoration: none; border: 1px solid var(--moss); border-radius: 3px;
+  transition: all .2s;
+}
+.btn-secondary:hover { background: var(--moss); color: #fff; }
+
+/* Hero stat strip */
+.hero-stats {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px;
+  background: var(--border); border: 1px solid var(--border); border-radius: 4px;
+  overflow: hidden; margin-top: 44px;
+}
+.hero-stat {
+  background: var(--vellum); padding: 20px 18px; text-align: center;
+}
+.hero-stat .num {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px; color: var(--moss); display: block; line-height: 1;
+}
+.hero-stat .lbl {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--faded); margin-top: 5px; display: block;
+}
+
+/* Hero image card */
+.hero-visual {
+  position: relative;
+}
+.hero-map-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden; box-shadow: var(--shadow);
+}
+.hero-map-card img { width: 100%; display: block; }
+.hero-map-caption {
+  padding: 12px 16px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--faded); border-top: 1px solid var(--border);
+  background: var(--vellum);
+}
+
+/* ── DIVIDER ── */
+.divider {
+  max-width: 1100px; margin: 0 auto;
+  border: none; border-top: 1px solid var(--border);
+}
+
+/* ── CRISIS SECTION ── */
+.section {
+  max-width: 1100px; margin: 0 auto;
+  padding: 70px 40px;
+}
+@media (max-width: 800px) { .section { padding: 50px 24px; } }
+
+.section-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--moss); margin-bottom: 12px;
+}
+
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(26px, 3.5vw, 40px);
+  line-height: 1.15; letter-spacing: -0.02em;
+  color: var(--ink); margin-bottom: 20px;
+}
+
+.section-body {
+  font-size: 15px; color: var(--faded); line-height: 1.8;
+  max-width: 680px;
+}
+
+/* Pull quote */
+.pull-quote {
+  border-left: 4px solid var(--moss);
+  margin: 40px 0; padding: 20px 28px;
+  background: rgba(46,94,53,0.04); border-radius: 0 4px 4px 0;
+}
+.pull-quote p {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px; font-style: italic;
+  color: var(--ink); line-height: 1.5; margin-bottom: 10px;
+}
+.pull-quote cite {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--faded); font-style: normal;
+}
+
+/* Stat callouts row */
+.callout-row {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  margin: 48px 0;
+}
+@media (max-width: 700px) { .callout-row { grid-template-columns: 1fr 1fr; } }
+.callout {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 4px; padding: 22px 18px;
+  box-shadow: 0 2px 12px rgba(28,43,26,0.06);
+}
+.callout .crop-icon { font-size: 22px; margin-bottom: 8px; display: block; }
+.callout .pct {
+  font-family: 'Playfair Display', serif;
+  font-size: 34px; color: var(--rust); display: block;
+  line-height: 1; margin-bottom: 4px;
+}
+.callout .desc {
+  font-size: 11px; color: var(--faded); line-height: 1.5;
+  font-family: 'Courier Prime', monospace;
+}
+.callout .crop-name {
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--moss); font-family: 'Courier Prime', monospace;
+  margin-bottom: 6px; display: block;
+}
+
+/* ── MAP GALLERY ── */
+.map-section {
+  background: var(--vellum);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 70px 0;
+}
+.map-section-inner {
+  max-width: 1100px; margin: 0 auto; padding: 0 40px;
+}
+@media (max-width: 800px) { .map-section-inner { padding: 0 24px; } }
+
+/* Tab controls */
+.map-tabs {
+  display: flex; gap: 0;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 32px;
+}
+.map-tab {
+  padding: 10px 24px;
+  background: none; border: none;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  font-family: 'Courier Prime', monospace;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--faded); cursor: pointer; transition: all .2s;
+}
+.map-tab:hover { color: var(--ink); }
+.map-tab.active { color: var(--moss); border-bottom-color: var(--moss); font-weight: 700; }
+
+/* Map type toggle */
+.map-type-toggle {
+  display: flex; gap: 8px; margin-bottom: 24px;
+}
+.map-type-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--border); border-radius: 100px;
+  background: #fff; color: var(--faded);
+  font-family: 'Courier Prime', monospace; font-size: 10px;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  cursor: pointer; transition: all .2s;
+}
+.map-type-btn.active {
+  background: var(--ink); color: #fff; border-color: var(--ink);
+}
+
+.map-display {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 6px; overflow: hidden; box-shadow: var(--shadow);
+}
+.map-display img { width: 100%; display: block; }
+.map-display-caption {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--vellum);
+  display: flex; justify-content: space-between; align-items: start;
+  gap: 20px; flex-wrap: wrap;
+}
+.map-caption-text {
+  font-size: 13px; color: var(--faded); line-height: 1.6;
+  max-width: 640px;
+}
+.map-caption-source {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--faded); white-space: nowrap; margin-top: 4px;
+}
+
+/* ── RATES SECTION ── */
+.rates-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
+  margin-top: 48px;
+}
+@media (max-width: 700px) { .rates-grid { grid-template-columns: 1fr; } }
+
+.rate-card {
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 4px; padding: 24px; box-shadow: 0 2px 12px rgba(28,43,26,0.05);
+}
+.rate-card-header {
+  display: flex; justify-content: space-between; align-items: start;
+  margin-bottom: 14px;
+}
+.rate-crop {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faded);
+}
+.rate-pct {
+  font-family: 'Playfair Display', serif; font-size: 26px; color: var(--ink);
+}
+.rate-pct .required {
+  font-size: 12px; color: var(--rust);
+  font-family: 'Courier Prime', monospace; display: block; font-style: normal;
+}
+
+/* Progress bar */
+.rate-bar-wrap {
+  height: 8px; background: var(--vellum); border-radius: 4px; margin-bottom: 10px;
+}
+.rate-bar-fill {
+  height: 8px; border-radius: 4px;
+  background: linear-gradient(90deg, var(--sage), var(--straw));
+}
+.rate-bar-target {
+  position: relative; margin-bottom: 8px;
+}
+.rate-bar-target::after {
+  content: '2.4% target';
+  position: absolute; right: 0; top: -18px;
+  font-family: 'Courier Prime', monospace; font-size: 9px;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--rust);
+}
+.rate-note { font-size: 12px; color: var(--faded); line-height: 1.5; }
+
+/* ── HOW IT WORKS ── */
+.how-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+  margin-top: 48px;
+}
+.how-grid-bottom {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px;
+  margin-top: 24px;
+}
+@media (max-width: 700px) { .how-grid { grid-template-columns: 1fr; } }
+
+.how-card {
+  border: 1px solid var(--border); border-radius: 4px; padding: 28px;
+  background: #fff; box-shadow: 0 2px 12px rgba(28,43,26,0.05);
+  position: relative;
+}
+.how-num {
+  font-family: 'Playfair Display', serif;
+  font-size: 48px; color: var(--vellum);
+  position: absolute; top: 14px; right: 18px;
+  line-height: 1; pointer-events: none; user-select: none;
+}
+.how-icon { font-size: 28px; margin-bottom: 14px; display: block; }
+.how-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px; color: var(--ink);
+  margin-bottom: 10px; line-height: 1.2;
+}
+.how-body { font-size: 13px; color: var(--faded); line-height: 1.7; }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 2px solid var(--ink);
+  background: var(--ink); color: rgba(255,255,255,0.6);
+}
+.footer-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 48px 40px 36px;
+  display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px;
+}
+@media (max-width: 700px) { .footer-inner { grid-template-columns: 1fr; padding: 40px 24px; } }
+
+.footer-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px; color: #fff; margin-bottom: 12px;
+}
+.footer-desc { font-size: 13px; line-height: 1.7; max-width: 320px; }
+.footer-col-title {
+  font-family: 'Courier Prime', monospace;
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.4); margin-bottom: 14px;
+}
+.footer-links { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.footer-links a {
+  color: rgba(255,255,255,0.55); text-decoration: none;
+  font-size: 13px; transition: color .2s;
+}
+.footer-links a:hover { color: #fff; }
+.footer-bottom {
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding: 20px 40px;
+  max-width: 1100px; margin: 0 auto;
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 10px;
+}
+.footer-bottom-text {
+  font-family: 'Courier Prime', monospace;
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+}
+
+/* ── ANIMATIONS ── */
+.fade-in {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+@media (max-width: 600px) {
+  .update-stats { grid-template-columns: 1fr !important; }
+  .update-panel { grid-template-columns: 1fr !important; }
+  .charts-grid  { grid-template-columns: 1fr !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-brand">Crop Companion</a>
+  <div class="nav-links">
+    <a href="#crisis">The Crisis</a>
+    <a href="#maps">Global Maps</a>
+    <a href="#tool">The Tool</a>
+    <a href="/app" class="nav-cta">Launch App →</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section style="position:relative;overflow:hidden;min-height:92vh;display:flex;align-items:center;">
+  <!-- Background wheat photo -->
+  <div style="position:absolute;inset:0;z-index:0;">
+    <img src="/static/images/wheat-field.jpg" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center 40%;">
+    <div style="position:absolute;inset:0;background:linear-gradient(105deg,rgba(28,43,26,0.88) 0%,rgba(28,43,26,0.75) 50%,rgba(28,43,26,0.3) 100%);"></div>
+  </div>
+
+  <div style="position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:80px 40px 80px;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;width:100%;">
+    <div>
+      <div style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:rgba(196,168,74,0.9);margin-bottom:16px;display:flex;align-items:center;gap:10px;">
+        <span style="width:30px;height:1px;background:rgba(196,168,74,0.7);display:inline-block;"></span>
+        Agricultural Intelligence Platform
+      </div>
+      <h1 style="font-family:'Playfair Display',serif;font-size:clamp(36px,5vw,58px);line-height:1.08;letter-spacing:-0.02em;color:#fff;margin-bottom:24px;">
+        The world's crops need a <em style="font-style:italic;color:var(--straw);">smarter</em> forecast
+      </h1>
+      <p style="font-size:16px;color:rgba(255,255,255,0.75);line-height:1.75;margin-bottom:36px;max-width:480px;">
+        Across 24–39% of the world's most important cropland, yields have stagnated, collapsed, or never improved. Climate change is now actively making this worse. Crop Companion combines ensemble machine learning with FAO census data to help farmers predict yields, diagnose diseases, and farm more sustainably.
+      </p>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;">
+        <a href="/app" class="btn-primary">Open the Tool →</a>
+        <a href="#crisis" style="display:inline-block;padding:14px 32px;background:transparent;color:rgba(255,255,255,0.8);font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;text-decoration:none;border:1px solid rgba(255,255,255,0.35);border-radius:3px;transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'" onmouseout="this.style.background='transparent'">Read the Research</a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.1);border-radius:4px;overflow:hidden;margin-top:44px;">
+        <div style="background:rgba(28,43,26,0.6);padding:20px 18px;text-align:center;backdrop-filter:blur(8px);">
+          <span style="font-family:'Playfair Display',serif;font-size:28px;color:var(--straw);display:block;line-height:1;">0.946</span>
+          <span style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-top:5px;display:block;">Model R²</span>
+        </div>
+        <div style="background:rgba(28,43,26,0.6);padding:20px 18px;text-align:center;backdrop-filter:blur(8px);">
+          <span style="font-family:'Playfair Display',serif;font-size:28px;color:var(--straw);display:block;line-height:1;">~10%</span>
+          <span style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-top:5px;display:block;">Median Error</span>
+        </div>
+        <div style="background:rgba(28,43,26,0.6);padding:20px 18px;text-align:center;backdrop-filter:blur(8px);">
+          <span style="font-family:'Playfair Display',serif;font-size:28px;color:var(--straw);display:block;line-height:1;">100+</span>
+          <span style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.5);margin-top:5px;display:block;">Countries</span>
+        </div>
+      </div>
+    </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- THE CRISIS -->
+<section class="section" id="crisis">
+  <div class="fade-in">
+    <div class="section-label">The Research</div>
+    <h2 class="section-title">A global food crisis is quietly taking shape</h2>
+    <p class="section-body">
+      Two landmark studies published in <em>Nature Communications</em> and <em>PLOS ONE</em> by Ray et al. (2012, 2013) analysed ~2.5 million agricultural census observations across 13,500 political units globally, tracking maize, rice, wheat and soybean from 1961 to 2008. Their findings are sobering.
+    </p>
+
+    <div class="pull-quote" style="position:relative;overflow:hidden;">
+      <div style="position:absolute;inset:0;z-index:0;">
+        <img src="/static/images/cracked-soil.jpg" alt="" style="width:100%;height:100%;object-fit:cover;opacity:0.12;">
+      </div>
+      <div style="position:relative;z-index:1;">
+        <p>"Across 24–39% of maize-, rice-, wheat- and soybean-growing areas, yields either never improve, stagnate or collapse."</p>
+        <cite>Ray et al. — Nature Communications, 2012 (DOI: 10.1038/ncomms2296)</cite>
+      </div>
+    </div>
+
+    <p class="section-body">
+      The four crops covered by this research - maize, rice, wheat and soybean — produce nearly two-thirds of global agricultural calories. When yields stagnate across more than a third of their growing areas, the implications for food security are profound.
+    </p>
+  </div>
+
+  <!-- Stagnation callouts -->
+  <div class="callout-row fade-in">
+    <div class="callout">
+      <span class="crop-name">Maize</span>
+      <span class="pct">26%</span>
+      <span class="desc">of harvested area experiencing yield stagnation globally</span>
+    </div>
+    <div class="callout">
+      <span class="crop-name">Rice</span>
+      <span class="pct">35%</span>
+      <span class="desc">of harvested area stagnating — including 79% of China's rice land</span>
+    </div>
+    <div class="callout">
+      <span class="crop-name">Wheat</span>
+      <span class="pct">37%</span>
+      <span class="desc">of harvested area stagnating — almost all of Western Europe</span>
+    </div>
+    <div class="callout">
+      <span class="crop-name">Soybean</span>
+      <span class="pct">23%</span>
+      <span class="desc">of harvested area not witnessing yield improvement</span>
+    </div>
+  </div>
+
+  <p class="section-body fade-in">
+    The causes are location-specific but include climate-related heat stress, soil fertility depletion, salinisation, groundwater depletion, increasing pest resistance, and — particularly in Africa — a lack of irrigation infrastructure and agricultural investment. The common thread is that the problem is knowable and, in many cases, addressable with the right information.
+  </p>
+
+  <div class="fade-in" style="margin-top:48px;">
+    <div style="background:var(--ink);border-radius:6px;overflow:hidden;box-shadow:var(--shadow);display:grid;grid-template-columns:1fr 420px;gap:0;" class="update-panel">
+      <!-- Text side -->
+      <div style="padding:36px 40px;position:relative;">
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,transparent,rgba(196,168,74,0.04));pointer-events:none;"></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+          <span style="background:var(--rust);color:#fff;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.15em;text-transform:uppercase;padding:4px 10px;border-radius:2px;">Updated 2025</span>
+          <span style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);">New Research</span>
+        </div>
+        <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:14px;line-height:1.2;">It's no longer just stagnation — climate is now actively pulling yields backwards</h3>
+        <p style="font-size:14px;color:rgba(255,255,255,0.7);line-height:1.75;margin-bottom:24px;">
+          A landmark 2025 study in <em>Nature</em> (Hultgren et al.) measured real-world farmer adaptation across 12,000 regions and found climate change will reduce global crop yields by <strong style="color:var(--straw);">8% by 2050</strong> regardless of emissions trajectory — with losses reaching 24% by 2100 if emissions continue unchecked. Even accounting for everything farmers can do, adaptation only offsets about one-third of these losses.
+        </p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;" class="update-stats">
+          <div style="border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:14px 12px;">
+            <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--straw);margin-bottom:4px;">733M</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);line-height:1.5;">people undernourished in 2023 — 152M more than pre-pandemic</div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:14px 12px;">
+            <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--straw);margin-bottom:4px;">84%</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);line-height:1.5;">of global rice area approaching biological yield ceiling</div>
+          </div>
+          <div style="border:1px solid rgba(255,255,255,0.12);border-radius:4px;padding:14px 12px;">
+            <div style="font-family:'Playfair Display',serif;font-size:24px;color:var(--straw);margin-bottom:4px;">1.63°C</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);line-height:1.5;">above pre-industrial average June 2023–May 2024 — a record</div>
+          </div>
+        </div>
+        <p style="font-size:11px;color:rgba(255,255,255,0.3);margin-top:20px;font-family:'Courier Prime',monospace;letter-spacing:0.06em;">
+          Sources: Hultgren et al. Nature 2025 · Gerber et al. Nature Food 2024 · FAO Statistical Yearbook 2024 · WMO 2024
+        </p>
+      </div>
+      <!-- Map image side -->
+      <div style="position:relative;min-height:320px;background:#0e1a0e;overflow:hidden;">
+        <img src="/static/images/hultgren-2025-map.png" alt="Hultgren et al. 2025 — projected crop yield changes from climate change" style="width:100%;height:100%;object-fit:contain;object-position:center;display:block;background:#0e1a0e;">
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 14px;background:rgba(0,0,0,0.65);font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:rgba(255,255,255,0.5);">
+          Hultgren et al. (Nature, 2025) — projected yield change by 2100
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CLIMATE CHARTS SECTION -->
+<section style="background:var(--vellum);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:60px 0;">
+  <div style="max-width:1100px;margin:0 auto;padding:0 40px;">
+    <div class="fade-in" style="margin-bottom:36px;">
+      <div class="section-label">The Data</div>
+      <h2 class="section-title">Two charts that show the full scale of the problem</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;" class="charts-grid">
+      <div class="fade-in">
+        <div style="background:#fff;border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:var(--shadow);">
+          <img src="/static/images/future-yields-climate.png" alt="Potential impacts of climate change on crop yields across the world — Our World in Data" style="width:100%;display:block;">
+          <div style="padding:14px 16px;border-top:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--ink);font-weight:700;margin-bottom:4px;">Climate change impact on yields by latitude</div>
+            <div style="font-size:11px;color:var(--faded);line-height:1.5;">Tropical regions face steep yield declines for maize and wheat. Northern latitudes may see short-term wheat gains — but most production is in the warming zones. Based on RCP8.5 scenario including CO₂ fertilisation effects.</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--faded);margin-top:8px;opacity:0.7;">OurWorldInData.org · CC-BY · Hannah Ritchie · Jägermeyr et al. 2021</div>
+          </div>
+        </div>
+      </div>
+      <div class="fade-in">
+        <div style="background:#fff;border:1px solid var(--border);border-radius:6px;overflow:hidden;box-shadow:var(--shadow);">
+          <img src="/static/images/prevalence-of-undernourishment.png" alt="Share of people who are undernourished - Our World in Data" style="width:100%;display:block;">
+          <div style="padding:14px 16px;border-top:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--ink);font-weight:700;margin-bottom:4px;">Hunger is rising again after decades of progress</div>
+            <div style="font-size:11px;color:var(--faded);line-height:1.5;">The global share of undernourished people fell steadily until 2015, then reversed. Sub-Saharan Africa has climbed back above 20%. The world line turned upward in 2020 and has not recovered — 733 million people were undernourished in 2023.</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--faded);margin-top:8px;opacity:0.7;">OurWorldInData.org · CC-BY · FAO data 2025</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAP GALLERY -->
+<section class="map-section" id="maps">
+  <div class="map-section-inner">
+    <div class="section-label">Global Evidence</div>
+    <h2 class="section-title" style="margin-bottom:8px;">Where are yields are failing?</h2>
+    <p class="section-body" style="margin-bottom:32px;">
+      These maps, derived from Ray et al. (2012, 2013) and distributed via EarthStat, show yield trends at sub-national resolution for the world's four most important crops. Toggle between the categorical trend view and the continuous rate-of-change view.
+    </p>
+
+    <!-- Crop tabs -->
+    <div class="map-tabs">
+      <button class="map-tab active" onclick="selectCrop('Maize', this)"> Maize</button>
+      <button class="map-tab" onclick="selectCrop('Rice', this)"> Rice</button>
+      <button class="map-tab" onclick="selectCrop('Wheat', this)"> Wheat</button>
+      <button class="map-tab" onclick="selectCrop('Soybean', this)"> Soybean</button>
+    </div>
+
+    <!-- Type toggle -->
+    <div class="map-type-toggle">
+      <button class="map-type-btn active" onclick="selectType('categorical', this)">Yield Trend Category</button>
+      <button class="map-type-btn" onclick="selectType('percentage', this)">Rate of Change (%/year)</button>
+    </div>
+
+    <div class="map-display">
+      <img id="map-img" src="/static/images/categorical_Maize.png" alt="Maize categorical yield trends">
+      <div class="map-display-caption">
+        <div>
+          <div class="map-caption-text" id="map-caption-text">
+            <strong>Maize - Categorical Yield Trends.</strong> Most of the US Corn Belt continues improving rapidly. Stagnation is widespread in eastern Mexico, parts of Western Europe (Spain, Italy, Greece), large areas of Africa, and significant portions of India and China. Yield collapse is rare globally but notable in parts of the Dominican Republic, Moldova, and southern Africa.
+          </div>
+        </div>
+        <div>
+          <div class="map-caption-source">EarthStat · Ray et al. 2012 &amp; 2013</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Legend explanation -->
+    <div style="margin-top:20px; display:flex; flex-wrap:wrap; gap:14px;" id="legend-wrap">
+      <div style="display:flex;align-items:center;gap:7px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--faded);">
+        <div style="width:14px;height:14px;border-radius:2px;background:#00008B;flex-shrink:0;"></div>Never Improved
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--faded);">
+        <div style="width:14px;height:14px;border-radius:2px;background:#4169E1;flex-shrink:0;"></div>Stagnating
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--faded);">
+        <div style="width:14px;height:14px;border-radius:2px;background:#00CED1;flex-shrink:0;"></div>Collapsed
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--faded);">
+        <div style="width:14px;height:14px;border-radius:2px;background:#FFFF00;flex-shrink:0;"></div>Improving Rapidly
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--faded);">
+        <div style="width:14px;height:14px;border-radius:2px;background:#FF6600;flex-shrink:0;"></div>Improving Moderately
+      </div>
+      <div style="display:flex;align-items:center;gap:7px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--faded);">
+        <div style="width:14px;height:14px;border-radius:2px;background:#8B0000;flex-shrink:0;"></div>Improving Slowly
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- YIELD RATES -->
+<section class="section" id="rates">
+  <div class="fade-in">
+    <div class="section-label">The 2050 Gap</div>
+    <h2 class="section-title">Current growth rates are not enough</h2>
+    <p class="section-body">
+      Ray et al. (2013) calculated that global crop production must roughly double by 2050 to meet demand — requiring a sustained 2.4% per year yield improvement rate. None of the four key crops are achieving this. At current rates, production would increase by far less than required, leaving a staggering shortfall.
+    </p>
+  </div>
+
+  <div class="rates-grid fade-in">
+    <div class="rate-card">
+      <div class="rate-card-header">
+        <div>
+          <div class="rate-crop"> Maize</div>
+          <div class="rate-pct">1.6%/yr <span class="required">needs 2.4%</span></div>
+        </div>
+      </div>
+      <div class="rate-bar-target">
+        <div class="rate-bar-wrap"><div class="rate-bar-fill" style="width:67%"></div></div>
+      </div>
+      <div class="rate-note">At current rates, production increases only ~67% by 2050 — a shortfall of 247 million tonnes versus what demand requires.</div>
+    </div>
+    <div class="rate-card">
+      <div class="rate-card-header">
+        <div>
+          <div class="rate-crop"> Rice</div>
+          <div class="rate-pct">1.0%/yr <span class="required">needs 2.4%</span></div>
+        </div>
+      </div>
+      <div class="rate-bar-target">
+        <div class="rate-bar-wrap"><div class="rate-bar-fill" style="width:42%"></div></div>
+      </div>
+      <div class="rate-note">Only ~42% increase projected by 2050. China, India and Indonesia — the top three producers — are all growing at well below doubling rates.</div>
+    </div>
+    <div class="rate-card">
+      <div class="rate-card-header">
+        <div>
+          <div class="rate-crop"> Wheat</div>
+          <div class="rate-pct">0.9%/yr <span class="required">needs 2.4%</span></div>
+        </div>
+      </div>
+      <div class="rate-bar-target">
+        <div class="rate-bar-wrap"><div class="rate-bar-fill" style="width:38%"></div></div>
+      </div>
+      <div class="rate-note">The weakest performer. Only ~38% production growth projected — a 388 million tonne shortfall by 2050. Western Europe has nearly universally stagnating wheat yields.</div>
+    </div>
+    <div class="rate-card">
+      <div class="rate-card-header">
+        <div>
+          <div class="rate-crop"> Soybean</div>
+          <div class="rate-pct">1.3%/yr <span class="required">needs 2.4%</span></div>
+        </div>
+      </div>
+      <div class="rate-bar-target">
+        <div class="rate-bar-wrap"><div class="rate-bar-fill" style="width:55%"></div></div>
+      </div>
+      <div class="rate-note">~55% increase projected — better than wheat and rice but still insufficient. South America is the bright spot, with doubling rates in much of Argentina and Brazil.</div>
+    </div>
+  </div>
+</section>
+
+<hr class="divider">
+
+<!-- HOW IT WORKS -->
+<section class="section" id="tool">
+  <div class="section-label">The Solution</div>
+  <h2 class="section-title">What Crop Companion does</h2>
+  <p class="section-body">
+    Armed with this evidence, we built a tool designed to give farmers and agricultural researchers the predictive intelligence they need — trained on real FAO census data, not synthetic datasets.
+  </p>
+
+  <div class="how-grid fade-in">
+    <div class="how-card" style="padding:0;overflow:hidden;">
+      <div style="height:160px;overflow:hidden;position:relative;">
+        <img src="/static/images/aerial-tractor.jpg" alt="Aerial view of crop field with tractor" style="width:100%;height:100%;object-fit:cover;object-position:center;">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(255,255,255,0.95) 100%);"></div>
+      </div>
+      <div style="padding:20px 24px 26px;">
+        <span class="how-num" style="top:auto;bottom:14px;">01</span>
+        <div class="how-title">Yield Prediction</div>
+        <p class="how-body">An ensemble of Random Forest, XGBoost and LightGBM models trained on real FAOSTAT data across 100+ countries and 40+ crops. Input your area, crop, rainfall, temperature and pesticide use — get a calibrated yield forecast with model-level breakdown.</p>
+      </div>
+    </div>
+    <div class="how-card" style="padding:0;overflow:hidden;">
+      <div style="height:160px;overflow:hidden;position:relative;">
+        <img src="/static/images/watering.jpg" alt="Watering crops" style="width:100%;height:100%;object-fit:cover;object-position:center 30%;">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(255,255,255,0.95) 100%);"></div>
+      </div>
+      <div style="padding:20px 24px 26px;">
+        <span class="how-num" style="top:auto;bottom:14px;">02</span>
+        <div class="how-title">Sustainability Advisory</div>
+        <p class="how-body">Every prediction includes a full sustainability report: water requirements vs. rainfall, irrigation gap, carbon footprint from pesticides, and actionable recommendations calibrated to your income level — including low-cost alternatives for smallholder farmers.</p>
+      </div>
+    </div>
+    <div class="how-card" style="padding:0;overflow:hidden;">
+      <div style="height:160px;overflow:hidden;position:relative;">
+        <img src="/static/images/disease-detection.jpg" alt="Disease detection" style="width:100%;height:100%;object-fit:cover;object-position:center center;">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(255,255,255,0.95) 100%);"></div>
+      </div>
+      <div style="padding:20px 24px 26px;">
+        <span class="how-num" style="top:auto;bottom:14px;">03</span>
+        <span class="how-icon">🔬</span>
+        <div class="how-title">Disease Detection</div>
+        <p class="how-body">Upload a photo of a diseased leaf and our ResNet-18 deep learning model - trained on real field photographs — identifies the disease, assesses severity, and prescribes organic, chemical and preventative treatment protocols tailored to the specific pathogen.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="how-grid-bottom fade-in">
+    <div class="how-card" style="padding:0;overflow:hidden;">
+      <div style="height:160px;overflow:hidden;position:relative;">
+        <img src="/static/images/pest.jpg" alt="fruit fly" style="width:100%;height:100%;object-fit:cover;object-position:center 60%;">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(255,255,255,0.95) 100%);"></div>
+      </div>
+      <div style="padding:20px 24px 26px;">
+        <span class="how-num" style="top:auto;bottom:14px;">04</span>
+        <div class="how-title">Pest Identification</div>
+        <p class="how-body">Photograph an insect or pest damage and our ResNet-18 model identifies it from 15 dangerous farm pest classes — including aphids, armyworms, corn borers, spider mites and more — then delivers targeted management, chemical control, and prevention guidance.</p>
+      </div>
+    </div>
+    <div class="how-card" style="padding:0;overflow:hidden;">
+      <div style="height:160px;overflow:hidden;position:relative;">
+        <img src="/static/images/cropgpt.jpg" alt="CropGPT AI agricultural advisor" style="width:100%;height:100%;object-fit:cover;object-position:center center;">
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(255,255,255,0.95) 100%);"></div>
+      </div>
+      <div style="padding:20px 24px 26px;">
+        <span class="how-num" style="top:auto;bottom:14px;">05</span>
+        <div class="how-title">CropGPT: Ask an Expert</div>
+        <p class="how-body">No photo? Just ask. Our AI-powered agricultural advisor answers questions about diseases, pest management, irrigation, soil health and sustainable farming, with practical, farmer-friendly advice for both organic and conventional operations.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top:56px;">
+    <a href="/app" class="btn-primary" style="font-size:18px; padding:18px 48px;">
+      Open Crop Companion →
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div class="footer-brand">Crop Companion</div>
+      <p class="footer-desc">An agricultural intelligence platform combining ensemble machine learning, deep learning disease detection, and sustainability analytics — built on real FAO census data.</p>
+    </div>
+    <div>
+      <div class="footer-col-title">The Tool</div>
+      <ul class="footer-links">
+        <li><a href="/app">Yield Predictor</a></li>
+        <li><a href="/app">Disease Detector</a></li>
+        <li><a href="/app">Sustainability Advisor</a></li>
+      </ul>
+    </div>
+    <div>
+      <div class="footer-col-title">Sources</div>
+      <ul class="footer-links">
+        <li><a href="https://www.nature.com/articles/ncomms2296" target="_blank">Ray et al. 2012 — Nat. Comms.</a></li>
+        <li><a href="https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0066428" target="_blank">Ray et al. 2013 — PLOS ONE</a></li>
+        <li><a href="https://www.fao.org/faostat/" target="_blank">FAO FAOSTAT</a></li>
+        <li><a href="https://isric.org/explore/soilgrids" target="_blank">ISRIC SoilGrids</a></li>
+        <li><a href="https://earthstat.org" target="_blank">EarthStat</a></li>
+      </ul>
+    </div>
+  </div>
+  <div style="border-top:1px solid rgba(255,255,255,0.08); padding:20px 40px; max-width:1100px; margin:0 auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+      <span class="footer-bottom-text">Map data © EarthStat · Ray et al. 2012 &amp; 2013 · CC-BY</span>
+      <span class="footer-bottom-text">Model trained on FAO FAOSTAT census data</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Map gallery logic ──
+const CAPTIONS = {
+  Maize: {
+    categorical: '<strong>Maize — Categorical Yield Trends.</strong> Most of the US Corn Belt, western Mexico, Brazil and Argentina are improving rapidly. Stagnation is widespread in parts of Western Europe (Spain, Italy), large portions of Africa, and significant areas of India (~31%) and China (~52%). Collapse is rare but notable in Moldova and parts of southern Africa.',
+    percentage:  '<strong>Maize — Rate of Yield Change (%/year).</strong> Yellow-green indicates positive growth; orange-red indicates decline. The fastest gains are in the US Corn Belt, Argentina (78% of maize area), and Brazil. Declines are concentrated in parts of the US Great Plains, eastern Mexico, and several African nations including Kenya, Zambia and Zimbabwe.',
+  },
+  Rice: {
+    categorical: '<strong>Rice — Categorical Yield Trends.</strong> Rice stagnation is the most geographically extensive of all four crops. China has 79% of its rice area stagnating; Indonesia 81%. Areas still improving include Bangladesh (100%), Vietnam and parts of India. California rice yields peaked in the late 1990s.',
+    percentage:  '<strong>Rice — Rate of Yield Change (%/year).</strong> South and Southeast Asia dominate positive rice yield growth. Notable gainers include Bangladesh, Vietnam, Cambodia and parts of India. Declines appear in North Korea, parts of Nigeria, and northeastern Brazil. The global average rate of 1.0%/year is well below the 2.4% needed to double production by 2050.',
+  },
+  Wheat: {
+    categorical: '<strong>Wheat — Categorical Yield Trends.</strong> Western Europe shows near-universal stagnation — approximately 80% of wheat areas in France and Germany, and ~99% in the United Kingdom have ceased improving. Substantial improvement continues in Canada, parts of Russia, China (~44% of areas), Iran and Afghanistan.',
+    percentage:  '<strong>Wheat — Rate of Yield Change (%/year).</strong> The weakest performer globally at 0.9%/year average. Declines are prominent in eastern Europe (Ukraine, Moldova, Bulgaria), parts of the US Great Plains, and much of Australia. Strong growth areas include parts of Iran, Afghanistan, and eastern China.',
+  },
+  Soybean: {
+    categorical: '<strong>Soybean — Categorical Yield Trends.</strong> The most optimistic picture of the four crops — 76% of global soybean area is still improving. The US, Brazil and Argentina dominate production and all show widespread yield growth. China has 58% of its area not improving; India is nearly evenly split.',
+    percentage:  '<strong>Soybean — Rate of Yield Change (%/year).</strong> South America is the standout — large areas of Argentina, Brazil, Venezuela and Uruguay are achieving doubling rates (>2.4%/year). The US also shows widespread positive rates. Declines are limited to parts of the Great Plains and isolated areas in Africa.',
+  },
+};
+
+let currentCrop = 'Maize';
+let currentType = 'categorical';
+
+function updateMap() {
+  const img = document.getElementById('map-img');
+  const caption = document.getElementById('map-caption-text');
+  const legend = document.getElementById('legend-wrap');
+
+  img.style.opacity = '0.4';
+  setTimeout(() => {
+    img.src = `/static/images/${currentType}_${currentCrop}.png`;
+    img.alt = `${currentCrop} ${currentType} yield data`;
+    img.onload = () => { img.style.opacity = '1'; };
+    caption.innerHTML = CAPTIONS[currentCrop][currentType];
+    // Show/hide legend based on map type
+    legend.style.display = currentType === 'categorical' ? 'flex' : 'none';
+  }, 150);
+
+  img.style.transition = 'opacity 0.15s ease';
+}
+
+function selectCrop(crop, btn) {
+  currentCrop = crop;
+  document.querySelectorAll('.map-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateMap();
+}
+
+function selectType(type, btn) {
+  currentType = type;
+  document.querySelectorAll('.map-type-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  updateMap();
+}
+
+// ── Fade-in on scroll ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>

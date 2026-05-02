@@ -1,0 +1,1 @@
+"""Crop Companion application package."""

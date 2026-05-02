@@ -1,0 +1,23 @@
+# Trained model weights — regenerate by running train_disease_model.py / train_pest_model.py
+*.pth
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment variables — never commit your API key
+.env
+
+# macOS
+.DS_Store
+
+# Editor settings
+.vscode/
+
+# CatBoost training artefacts
+catboost_info/
+
+# Generated model metadata
+models/class_names.json
+models/pest_class_names.json

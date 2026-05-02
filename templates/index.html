@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crop Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --parchment: #f7f2e8;
+  --vellum:    #ede7d6;
+  --ink:       #1c2b1a;
+  --faded:     #5a6b57;
+  --moss:      #2e5e35;
+  --sage:      #4a8c52;
+  --straw:     #c4a84a;
+  --rust:      #b5471d;
+  --sky:       #3a7bb5;
+  --border:    rgba(46,94,53,0.18);
+  --shadow:    0 4px 24px rgba(28,43,26,0.09);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--parchment); color: var(--ink);
+  font-family: 'Lato', sans-serif; min-height: 100vh;
+  background-image: linear-gradient(rgba(46,94,53,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(46,94,53,0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.page { max-width: 1100px; margin: 0 auto; padding: 40px 24px 80px; }
+.masthead { display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 32px; }
+.masthead-left h1 { font-family: 'Playfair Display', serif; font-size: clamp(28px, 4vw, 42px); line-height: 1; letter-spacing: -0.02em; }
+.masthead-left p { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--faded); margin-top: 5px; font-family: 'Courier Prime', monospace; }
+.badge { background: var(--moss); color: #fff; font-size: 10px; font-family: 'Courier Prime', monospace; letter-spacing: 0.1em; text-transform: uppercase; padding: 4px 10px; border-radius: 2px; }
+.layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+.full { grid-column: 1 / -1; }
+.panel { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 28px; box-shadow: var(--shadow); }
+.panel-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--ink); margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.panel-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+@media (max-width: 500px) { .stats-row { grid-template-columns: 1fr 1fr; } }
+.stat-box { border: 1px solid var(--border); border-radius: 4px; padding: 14px 12px; text-align: center; background: var(--vellum); transition: border-color .2s; }
+.stat-box:hover { border-color: var(--sage); }
+.stat-box .lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--faded); font-family: 'Courier Prime', monospace; display: block; margin-bottom: 4px; }
+.stat-box .val { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--moss); display: block; }
+.model-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 4px; }
+.model-table th { font-family: 'Courier Prime', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--faded); padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+.model-table td { padding: 10px; border-bottom: 1px solid rgba(46,94,53,0.08); }
+.model-table tr:last-child td { border-bottom: none; }
+.model-table tr.best td { background: rgba(46,94,53,0.05); font-weight: 700; }
+.model-table tr.ensemble td { background: rgba(196,168,74,0.08); }
+.bar-cell { width: 120px; }
+.bar-wrap { background: var(--vellum); border-radius: 2px; height: 6px; }
+.bar-fill { height: 6px; border-radius: 2px; background: var(--sage); transition: width .6s ease; }
+.model-name { font-weight: 700; color: var(--ink); }
+.tag { display: inline-block; font-size: 9px; font-family: 'Courier Prime', monospace; padding: 1px 6px; border-radius: 2px; margin-left: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+.tag-best     { background: rgba(46,94,53,0.15);  color: var(--moss); }
+.tag-ensemble { background: rgba(196,168,74,0.25); color: #7a6020; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 480px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { display: flex; flex-direction: column; gap: 5px; }
+.form-group.full { grid-column: 1/-1; }
+.form-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.13em; color: var(--faded); font-family: 'Courier Prime', monospace; }
+.form-control { padding: 11px 14px; border: 1px solid rgba(46,94,53,0.3); border-radius: 4px; font-family: 'Lato', sans-serif; font-size: 14px; background: var(--vellum); color: var(--ink); transition: border-color .2s, box-shadow .2s; width: 100%; }
+.form-control:focus { outline: none; border-color: var(--sage); box-shadow: 0 0 0 3px rgba(74,140,82,0.1); background: #fff; }
+.income-toggle { display: flex; gap: 6px; margin-top: 4px; }
+.income-btn { flex: 1; padding: 9px 4px; border: 1px solid var(--border); background: var(--vellum); border-radius: 4px; font-size: 11px; font-family: 'Courier Prime', monospace; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; color: var(--faded); transition: all .2s; }
+.income-btn.active { background: var(--moss); color: #fff; border-color: var(--moss); }
+.btn-predict { width: 100%; padding: 15px; background: var(--moss); color: #fff; border: none; border-radius: 4px; font-family: 'Playfair Display', serif; font-size: 16px; font-style: italic; cursor: pointer; margin-top: 18px; transition: background .2s, transform .15s; letter-spacing: 0.02em; }
+.btn-predict:hover { background: #24491f; }
+.btn-predict:active { transform: scale(0.99); }
+.btn-predict:disabled { opacity: .6; cursor: wait; }
+.result-box { display: none; margin-top: 20px; padding: 22px; background: linear-gradient(135deg, rgba(46,94,53,0.06), rgba(196,168,74,0.07)); border: 1px dashed rgba(46,94,53,0.35); border-radius: 4px; animation: fadeIn .4s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; } }
+.result-yield { font-family: 'Playfair Display', serif; font-size: 42px; color: var(--moss); line-height: 1; }
+.result-unit  { font-size: 14px; color: var(--faded); margin-left: 4px; }
+.result-sub   { font-size: 12px; color: var(--faded); margin-top: 6px; font-family: 'Courier Prime', monospace; }
+.votes-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.vote-chip { padding: 5px 12px; border: 1px solid var(--border); border-radius: 100px; font-size: 11px; font-family: 'Courier Prime', monospace; color: var(--faded); }
+.vote-chip span { color: var(--moss); font-weight: 700; }
+.sustain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
+@media (max-width: 600px) { .sustain-grid { grid-template-columns: 1fr 1fr; } }
+.sustain-card { border: 1px solid var(--border); border-radius: 4px; padding: 14px; text-align: center; background: var(--vellum); }
+.sustain-card .s-val { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--moss); }
+.sustain-card .s-lbl { font-size: 9px; font-family: 'Courier Prime', monospace; text-transform: uppercase; letter-spacing: 0.12em; color: var(--faded); margin-top: 3px; }
+.carbon-meter { margin: 0 0 20px; }
+.meter-label { display: flex; justify-content: space-between; font-size: 11px; color: var(--faded); margin-bottom: 5px; font-family: 'Courier Prime', monospace; }
+.meter-track { height: 10px; border-radius: 2px; background: linear-gradient(90deg, #2e5e35 0%, #c4a84a 50%, #b5471d 100%); position: relative; }
+.meter-cursor { position: absolute; top: -4px; width: 6px; height: 18px; background: var(--ink); border-radius: 1px; transform: translateX(-50%); transition: left 0.8s cubic-bezier(0.4,0,0.2,1); }
+.rec-list { display: flex; flex-direction: column; gap: 10px; }
+.rec-card { border-left: 3px solid var(--border); padding: 12px 14px; background: #fafaf6; border-radius: 0 4px 4px 0; transition: border-color .2s; }
+.rec-card:hover { border-left-color: var(--sage); }
+.rec-card.HIGH   { border-left-color: var(--rust); }
+.rec-card.MEDIUM { border-left-color: var(--straw); }
+.rec-card.LOW    { border-left-color: var(--sage); }
+.rec-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.rec-cat { font-size: 12px; font-weight: 700; color: var(--ink); }
+.rec-pri { font-size: 9px; font-family: 'Courier Prime', monospace; text-transform: uppercase; letter-spacing: 0.1em; padding: 1px 7px; border-radius: 2px; }
+.pri-HIGH   { background: rgba(181,71,29,0.12); color: var(--rust); }
+.pri-MEDIUM { background: rgba(196,168,74,0.2);  color: #7a6020; }
+.pri-LOW    { background: rgba(46,94,53,0.1);    color: var(--moss); }
+.rec-tip { font-size: 12px; color: var(--faded); line-height: 1.5; }
+.rec-alt { font-size: 11px; color: var(--sky);   line-height: 1.5; margin-top: 4px; font-style: italic; }
+.income-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-family: 'Courier Prime', monospace; color: var(--faded); margin-bottom: 14px; }
+.income-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--moss); }
+.loading-text { text-align: center; color: var(--faded); font-family: 'Courier Prime', monospace; font-size: 13px; padding: 40px; letter-spacing: 0.05em; }
+.dot-anim::after { content: ''; animation: dots 1.4s infinite; }
+@keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
+.tab-bar { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 28px; }
+.tab-btn { padding: 11px 28px; background: none; border: none; border-bottom: 3px solid transparent; margin-bottom: -2px; font-family: 'Courier Prime', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--faded); cursor: pointer; transition: color .2s, border-color .2s; }
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active { color: var(--moss); border-bottom-color: var(--moss); font-weight: 700; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+.tooltip-wrap { position: relative; display: inline-block; cursor: help; }
+.tooltip-wrap:hover .tooltip-body { display: block; }
+.tooltip-body { display: none; position: absolute; bottom: 130%; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; font-size: 11px; line-height: 1.4; padding: 7px 11px; border-radius: 4px; white-space: nowrap; z-index: 10; font-family: 'Lato', sans-serif; }
+/* Chat tab */
+.chat-wrap { display: flex; flex-direction: column; height: 600px; }
+.chat-suggested { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+.chat-chip { padding: 7px 14px; border: 1px solid var(--border); border-radius: 100px; background: var(--vellum); font-size: 12px; font-family: 'Courier Prime', monospace; color: var(--faded); cursor: pointer; transition: all .2s; }
+.chat-chip:hover { background: rgba(46,94,53,0.08); border-color: var(--sage); color: var(--moss); }
+.chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding: 6px 2px; margin-bottom: 18px; }
+.chat-msg { max-width: 85%; display: flex; flex-direction: column; gap: 4px; }
+.chat-msg.user { align-self: flex-end; align-items: flex-end; }
+.chat-msg.assistant { align-self: flex-start; align-items: flex-start; }
+.chat-bubble { padding: 12px 16px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+.chat-msg.user .chat-bubble { background: var(--moss); color: #fff; border-radius: 8px 8px 2px 8px; }
+.chat-msg.assistant .chat-bubble { background: var(--vellum); border: 1px solid var(--border); color: var(--ink); border-radius: 8px 8px 8px 2px; }
+.chat-role { font-size: 9px; font-family: 'Courier Prime', monospace; text-transform: uppercase; letter-spacing: 0.12em; color: var(--faded); }
+.chat-input-row { display: flex; gap: 10px; }
+.chat-input { flex: 1; padding: 12px 14px; border: 1px solid rgba(46,94,53,0.3); border-radius: 4px; font-family: 'Lato', sans-serif; font-size: 14px; background: var(--vellum); color: var(--ink); transition: border-color .2s; }
+.chat-input:focus { outline: none; border-color: var(--sage); box-shadow: 0 0 0 3px rgba(74,140,82,0.1); background: #fff; }
+.chat-send { padding: 12px 22px; background: var(--moss); color: #fff; border: none; border-radius: 4px; font-family: 'Playfair Display', serif; font-size: 14px; font-style: italic; cursor: pointer; transition: background .2s; white-space: nowrap; }
+.chat-send:hover { background: #24491f; }
+.chat-send:disabled { opacity: .6; cursor: wait; }
+.chat-empty { text-align: center; color: var(--faded); font-family: 'Courier Prime', monospace; font-size: 12px; padding: 40px 20px; letter-spacing: 0.05em; border: 1px dashed var(--border); border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="masthead-left">
+      <h1>Crop Companion</h1>
+    </div>
+    <span class="badge" id="ensemble-badge">Ensemble · Loading</span>
+  </header>
+
+  <div id="loading-screen" class="loading-text">
+    <span class="dot-anim">Connecting to prediction models</span>
+  </div>
+
+  <div id="main-ui" style="display:none">
+
+    <div class="tab-bar">
+      <a href="/" style="display:flex;align-items:center;gap:6px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--faded);text-decoration:none;padding:11px 0;margin-right:20px;border-bottom:3px solid transparent;transition:color .2s;" onmouseover="this.style.color='var(--moss)'" onmouseout="this.style.color='var(--faded)'">← Home</a>
+      <button class="tab-btn active" onclick="switchTab('yield',this)"> Yield Prediction &amp; Sustainability</button>
+      <button class="tab-btn" onclick="switchTab('disease',this)"> Plant Disease Detection</button>
+      <button class="tab-btn" onclick="switchTab('pest',this)"> Pest Identification</button>
+      <button class="tab-btn" onclick="switchTab('chat',this)"> CropGPT</button>
+    </div>
+
+    <!--  Yield Tab  -->
+    <div class="tab-pane active" id="tab-yield">
+
+      <div class="layout">
+        <div class="panel">
+          <h2 class="panel-title"> Ensemble Accuracy</h2>
+          <div class="stats-row" style="grid-template-columns:1fr 1fr;">
+            <div class="stat-box">
+              <span class="lbl"><span class="tooltip-wrap">R² Score<span class="tooltip-body">1.0 = perfect fit. Measures how well the model explains yield variance.</span></span></span>
+              <span class="val" id="s-r2">—</span>
+            </div>
+            <div class="stat-box">
+              <span class="lbl"><span class="tooltip-wrap">Typical Error<span class="tooltip-body">Median absolute % error on test set (bottom 10% of yields excluded). A model accuracy stat, not a per-prediction confidence interval.</span></span></span>
+              <span class="val" id="s-mape">—</span>
+            </div>
+          </div>
+          <p style="font-size:11px;color:var(--faded);font-family:'Courier Prime',monospace;" id="train-info">—</p>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title"> Model Comparison</h2>
+          <table class="model-table">
+            <thead><tr><th>Model</th><th>R²</th><th>Typical Error</th><th class="bar-cell">Fit</th></tr></thead>
+            <tbody id="model-tbody"><tr><td colspan="4" style="color:var(--faded);font-size:12px;padding:16px">Loading...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="layout" style="margin-top:24px">
+        <div class="panel">
+          <h2 class="panel-title"> Predict Yield</h2>
+          <div class="form-grid">
+            <div class="form-group"><label class="form-label">Area / Country</label><select id="area" class="form-control"></select></div>
+            <div class="form-group"><label class="form-label">Crop</label><select id="crop" class="form-control"></select></div>
+            <div class="form-group"><label class="form-label">Annual Rainfall (mm)</label><input id="rainfall" type="number" class="form-control" value="1485"></div>
+            <div class="form-group"><label class="form-label">Avg Temperature (°C)</label><input id="temperature" type="number" class="form-control" value="16.37" step="0.1"></div>
+            <div class="form-group full"><label class="form-label">Pesticides used (tonnes)</label><input id="pesticides" type="number" class="form-control" value="121"></div>
+            <div class="form-group full">
+              <label class="form-label">Farmer income level</label>
+              <div class="income-toggle">
+                <button class="income-btn active" onclick="setIncome('low',this)"> Low / Smallholder</button>
+                <button class="income-btn" onclick="setIncome('medium',this)"> Medium</button>
+                <button class="income-btn" onclick="setIncome('high',this)"> Commercial</button>
+              </div>
+            </div>
+          </div>
+          <button class="btn-predict" id="predict-btn" onclick="runPredict()">Predict Yield →</button>
+          <div class="result-box" id="result-box">
+            <div style="font-size:11px;color:var(--faded);font-family:'Courier Prime',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Predicted Yield</div>
+            <div><span class="result-yield" id="res-yield">—</span><span class="result-unit">hg/ha</span></div>
+            <div class="result-sub" id="res-sub">—</div>
+            <div class="votes-grid" id="votes-grid"></div>
+          </div>
+        </div>
+
+        <div class="panel" id="sustain-panel">
+          <h2 class="panel-title"> Sustainability Snapshot</h2>
+          <p style="color:var(--faded);font-size:13px;line-height:1.6;">Run a prediction to see water requirements, carbon intensity, and tailored advice for your income level.</p>
+        </div>
+      </div>
+
+      <div class="layout" style="margin-top:24px;display:none" id="recs-row">
+        <div class="panel full">
+          <h2 class="panel-title"> Sustainability &amp; Low-Income Recommendations</h2>
+          <div class="income-indicator"><div class="income-dot"></div><span id="income-label">—</span></div>
+          <div class="rec-list" id="rec-list"></div>
+        </div>
+      </div>
+
+    </div><!-- /tab-yield -->
+
+    <!--  Disease Tab  -->
+    <div class="tab-pane" id="tab-disease">
+      <div class="layout" style="margin-top:24px">
+        <div class="panel full">
+          <h2 class="panel-title"> Plant Disease Detector</h2>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+            <div>
+              <p style="font-size:13px;color:var(--faded);line-height:1.7;margin-bottom:18px;">
+                Upload a photo of your plant's leaf or affected area. The deep learning model (ResNet-18, trained on real field photos) will identify the disease and prescribe treatment.
+              </p>
+
+              <label id="drop-zone" style="border:2px dashed rgba(46,94,53,0.35);border-radius:6px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--vellum);display:block;">
+                <input type="file" id="img-upload" accept="image/*" style="display:none">
+                <div id="drop-prompt">
+                  <div style="font-size:36px;margin-bottom:10px;"></div>
+                  <div style="font-size:14px;font-weight:700;color:var(--moss);">Drop a leaf photo here</div>
+                  <div style="font-size:12px;color:var(--faded);margin-top:4px;">or click to browse · JPG, PNG, WEBP</div>
+                </div>
+                <img id="preview-img" style="display:none;max-width:100%;max-height:220px;border-radius:4px;object-fit:cover;margin-top:10px;" alt="Preview">
+              </label>
+
+              <button id="diagnose-btn" style="width:100%;margin-top:12px;padding:14px;background:var(--moss);color:#fff;border:none;border-radius:4px;font-family:'Playfair Display',serif;font-size:15px;font-style:italic;cursor:pointer;transition:background .2s;display:none;">
+                Diagnose Disease →
+              </button>
+              <button id="reupload-btn" style="width:100%;margin-top:8px;padding:10px;background:none;color:var(--faded);border:1px solid var(--border);border-radius:4px;font-family:'Courier Prime',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.1em;cursor:pointer;display:none;">
+                ↺ Upload a different image
+              </button>
+              <div id="diagnose-loading" style="display:none;text-align:center;padding:16px;font-family:'Courier Prime',monospace;font-size:12px;color:var(--faded);">
+                <span class="dot-anim">Analysing image</span>
+              </div>
+            </div>
+
+            <div id="disease-result" style="display:none;">
+              <div style="padding:18px;border-radius:4px;margin-bottom:14px;" id="diag-header">
+                <div style="font-size:10px;font-family:'Courier Prime',monospace;text-transform:uppercase;letter-spacing:.12em;opacity:.7;margin-bottom:4px;">Diagnosis</div>
+                <div style="font-family:'Playfair Display',serif;font-size:22px;line-height:1.2;" id="diag-name">—</div>
+                <div style="font-size:12px;margin-top:6px;opacity:.8;" id="diag-crop">—</div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                <div class="stat-box"><span class="lbl">Confidence</span><span class="val" id="diag-conf" style="font-size:26px;">—</span></div>
+                <div class="stat-box"><span class="lbl">Severity</span><span class="val" id="diag-severity" style="font-size:18px;">—</span></div>
+              </div>
+              <p id="diag-desc" style="font-size:13px;color:var(--faded);line-height:1.6;margin-bottom:14px;padding:12px;background:var(--vellum);border-radius:4px;border-left:3px solid var(--border);">—</p>
+              <div>
+                <div style="font-size:10px;font-family:'Courier Prime',monospace;text-transform:uppercase;letter-spacing:.12em;color:var(--faded);margin-bottom:6px;">Also considered</div>
+                <div id="diag-alts" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="treatment-panel" style="display:none;margin-top:20px;border-top:1px solid var(--border);padding-top:20px;">
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">
+              <div>
+                <div style="font-size:11px;font-family:'Courier Prime',monospace;text-transform:uppercase;letter-spacing:.1em;color:var(--moss);font-weight:700;margin-bottom:8px;"> Organic / Low-input</div>
+                <ul id="treat-organic" style="list-style:none;display:flex;flex-direction:column;gap:7px;"></ul>
+              </div>
+              <div>
+                <div style="font-size:11px;font-family:'Courier Prime',monospace;text-transform:uppercase;letter-spacing:.1em;color:var(--rust);font-weight:700;margin-bottom:8px;"> Chemical treatment</div>
+                <ul id="treat-chemical" style="list-style:none;display:flex;flex-direction:column;gap:7px;"></ul>
+              </div>
+              <div>
+                <div style="font-size:11px;font-family:'Courier Prime',monospace;text-transform:uppercase;letter-spacing:.1em;color:var(--sky);font-weight:700;margin-bottom:8px;"> Prevention</div>
+                <ul id="treat-prevention" style="list-style:none;display:flex;flex-direction:column;gap:7px;"></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /tab-disease -->
+
+    <!-- Pest Identification Tab -->
+    <div class="tab-pane" id="tab-pest">
+      <div class="layout" style="margin-top:8px">
+        <div class="panel full">
+          <h2 class="panel-title">Pest Identification &amp; Management</h2>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+
+            <!-- Upload side -->
+            <div>
+              <p style="font-size:13px; color:var(--faded); line-height:1.7; margin-bottom:18px;">
+                Upload a photo of the pest or affected crop area. The model (ResNet-18, trained on 15 farm insect classes) will identify the pest and provide management and prevention guidance.
+              </p>
+
+              <label for="pest-upload" id="pest-drop-zone"
+                style="border:2px dashed rgba(46,94,53,0.35); border-radius:6px; padding:36px 20px;
+                       text-align:center; cursor:pointer; transition:all .2s; background:var(--vellum); display:block;">
+                <div id="pest-drop-prompt">
+                  <div style="font-size:36px; margin-bottom:10px;">🪲</div>
+                  <div style="font-size:14px; font-weight:700; color:var(--moss);">Drop a pest photo here</div>
+                  <div style="font-size:12px; color:var(--faded); margin-top:4px;">or click to browse · JPG, PNG, WEBP</div>
+                </div>
+                <img id="pest-preview-img" style="display:none; max-width:100%; max-height:220px;
+                     border-radius:4px; object-fit:cover; margin-top:10px;" alt="Preview">
+              </label>
+
+              <input type="file" id="pest-upload" accept="image/*"
+                     style="position:absolute; width:0; height:0; opacity:0; overflow:hidden;">
+
+              <button id="pest-identify-btn"
+                style="width:100%; margin-top:12px; padding:14px;
+                       background:var(--rust); color:#fff; border:none; border-radius:4px;
+                       font-family:'Playfair Display',serif; font-size:15px; font-style:italic;
+                       cursor:pointer; transition:background .2s; display:none;">
+                Identify Pest →
+              </button>
+
+              <button id="pest-reupload-btn"
+                style="width:100%; margin-top:8px; padding:10px;
+                       background:none; color:var(--faded); border:1px solid var(--border); border-radius:4px;
+                       font-family:'Courier Prime',monospace; font-size:11px; text-transform:uppercase;
+                       letter-spacing:0.1em; cursor:pointer; transition:all .2s; display:none;">
+                Upload a different image
+              </button>
+
+              <div id="pest-loading"
+                style="display:none; text-align:center; padding:16px;
+                       font-family:'Courier Prime',monospace; font-size:12px; color:var(--faded);">
+                <span class="dot-anim">Identifying pest</span>
+              </div>
+            </div>
+
+            <!-- Result side -->
+            <div id="pest-result" style="display:none;">
+              <div style="padding:18px; border-radius:4px; margin-bottom:14px; background:rgba(181,71,29,0.07); border-left:4px solid var(--rust);">
+                <div style="font-size:10px; font-family:'Courier Prime',monospace; text-transform:uppercase; letter-spacing:.12em; opacity:.7; margin-bottom:4px;">Identified Pest</div>
+                <div style="font-family:'Playfair Display',serif; font-size:22px; line-height:1.2; color:var(--rust);" id="pest-name">—</div>
+                <div style="font-size:12px; margin-top:6px; color:var(--faded);" id="pest-crops">—</div>
+              </div>
+
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px;">
+                <div class="stat-box">
+                  <span class="lbl">Confidence</span>
+                  <span class="val" id="pest-conf" style="font-size:26px; color:var(--rust);">—</span>
+                </div>
+                <div class="stat-box">
+                  <span class="lbl">Severity</span>
+                  <span class="val" id="pest-severity" style="font-size:18px;">—</span>
+                </div>
+              </div>
+
+              <p id="pest-desc"
+                 style="font-size:13px; color:var(--faded); line-height:1.6; margin-bottom:14px;
+                        padding:12px; background:var(--vellum); border-radius:4px; border-left:3px solid var(--rust);">—</p>
+
+              <div style="margin-bottom:8px;">
+                <div style="font-size:10px; font-family:'Courier Prime',monospace; text-transform:uppercase; letter-spacing:.12em; color:var(--faded); margin-bottom:4px;">Also considered</div>
+                <div id="pest-alts" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Treatment protocol — full width -->
+          <div id="pest-treatment-panel" style="display:none; margin-top:20px; border-top:1px solid var(--border); padding-top:20px;">
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
+              <div>
+                <div style="font-size:11px; font-family:'Courier Prime',monospace; text-transform:uppercase; letter-spacing:.1em; color:var(--moss); font-weight:700; margin-bottom:8px;">Management</div>
+                <ul id="pest-management" style="list-style:none; display:flex; flex-direction:column; gap:7px;"></ul>
+              </div>
+              <div>
+                <div style="font-size:11px; font-family:'Courier Prime',monospace; text-transform:uppercase; letter-spacing:.1em; color:var(--rust); font-weight:700; margin-bottom:8px;">Chemical Control</div>
+                <ul id="pest-chemical" style="list-style:none; display:flex; flex-direction:column; gap:7px;"></ul>
+              </div>
+              <div>
+                <div style="font-size:11px; font-family:'Courier Prime',monospace; text-transform:uppercase; letter-spacing:.1em; color:var(--sky); font-weight:700; margin-bottom:8px;">Preventive Measures</div>
+                <ul id="pest-prevention" style="list-style:none; display:flex; flex-direction:column; gap:7px;"></ul>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /tab-pest -->
+
+    <!-- Ask an Expert Tab -->
+    <div class="tab-pane" id="tab-chat">
+      <div class="layout" style="margin-top:8px">
+        <div class="panel full">
+          <h2 class="panel-title">Ask an Expert</h2>
+          <p style="font-size:13px;color:var(--faded);line-height:1.6;margin-bottom:18px;">
+            No photo? Ask anything about crop diseases, pest management, irrigation, or sustainable farming.
+          </p>
+
+          <div style="margin-bottom:16px;">
+            <div style="font-size:9px;font-family:'Courier Prime',monospace;text-transform:uppercase;letter-spacing:0.13em;color:var(--faded);margin-bottom:10px;">Suggested questions</div>
+            <div class="chat-suggested">
+              <button class="chat-chip" onclick="chatChip(this)">How to prevent spider mites?</button>
+              <button class="chat-chip" onclick="chatChip(this)">What disease causes plant leaves to yellow?</button>
+              <button class="chat-chip" onclick="chatChip(this)">Best organic pest control for brassicas?</button>
+              <button class="chat-chip" onclick="chatChip(this)">How much water does wheat need?</button>
+              <button class="chat-chip" onclick="chatChip(this)">Signs of powdery mildew and treatment?</button>
+              <button class="chat-chip" onclick="chatChip(this)">How to improve soil health naturally?</button>
+            </div>
+          </div>
+
+          <div class="chat-wrap">
+            <div class="chat-messages" id="chat-messages">
+              <div class="chat-empty" id="chat-empty">Ask a question above or type below to get expert agricultural advice.</div>
+            </div>
+            <div class="chat-input-row">
+              <input class="chat-input" id="chat-input" type="text" placeholder="Ask about diseases, pests, yield, irrigation..." onkeydown="if(event.key==='Enter')sendChat()">
+              <button class="chat-send" id="chat-send-btn" onclick="sendChat()">Ask →</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div><!-- /tab-chat -->
+
+  </div><!-- /main-ui -->
+</div><!-- /page -->
+
+<script>
+const API = (window.location.origin.includes('127.0.0.1') || window.location.origin.includes('localhost'))
+  ? 'http://127.0.0.1:8000' : window.location.origin;
+let incomeLevel = 'low';
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function setIncome(val, btn) {
+  incomeLevel = val;
+  document.querySelectorAll('.income-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function loadMeta() {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 60000);
+  try {
+    const r = await fetch(`${API}/metadata`, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    populateUI(d);
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('main-ui').style.display = '';
+  } catch(e) {
+    clearTimeout(timer);
+    const msg = e.name === 'AbortError'
+      ? 'Backend took too long — models may still be training. Refresh in 30 seconds.'
+      : `Cannot reach backend at ${API} — make sure <code>python main.py</code> is running.`;
+    document.getElementById('loading-screen').innerHTML =
+      `<span style="color:var(--rust)"> ${msg}<br><br>
+       <button onclick="location.reload()" style="padding:8px 18px;background:var(--moss);color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:13px;">↺ Retry</button></span>`;
+  }
+}
+
+function populateUI(d) {
+  const m = d.metrics;
+  document.getElementById('s-r2').textContent    = m.r2.toFixed(4);
+  document.getElementById('s-mape').textContent   = `±${m.err_pct.toFixed(1)}%`;
+  document.getElementById('train-info').textContent =
+    `Trained on ${m.train_rows?.toLocaleString()} rows · Tested on ${m.test_rows?.toLocaleString()} rows (years > ${m.split_year})`;
+  document.getElementById('ensemble-badge').textContent = `Ensemble · R² ${m.r2.toFixed(3)}`;
+
+  const rows = Object.entries(m.all_models || {}).map(([name, mm]) => ({ name, ...mm }));
+  rows.sort((a, b) => a.name === 'Ensemble' ? 1 : b.name === 'Ensemble' ? -1 : b.r2 - a.r2);
+  document.getElementById('model-tbody').innerHTML = rows.map(row => {
+    const isEns = row.name === 'Ensemble', isBest = row.name === m.best_single;
+    const tag = isEns ? `<span class="tag tag-ensemble">ensemble</span>` : isBest ? `<span class="tag tag-best">best</span>` : '';
+    return `<tr class="${isEns ? 'ensemble' : isBest ? 'best' : ''}">
+      <td><span class="model-name">${row.name}</span>${tag}</td>
+      <td>${row.r2.toFixed(4)}</td><td>±${row.err_pct.toFixed(1)}%</td>
+      <td class="bar-cell"><div class="bar-wrap"><div class="bar-fill" style="width:${Math.round(row.r2*100)}%"></div></div></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('area').innerHTML = d.areas.map(a => `<option value="${a}">${a}</option>`).join('');
+  document.getElementById('crop').innerHTML = d.items.map(i => `<option value="${i}">${i}</option>`).join('');
+}
+
+async function runPredict() {
+  const btn = document.getElementById('predict-btn');
+  btn.disabled = true; btn.textContent = 'Predicting…';
+  const payload = {
+    area: document.getElementById('area').value,
+    crop: document.getElementById('crop').value,
+    rainfall:    parseFloat(document.getElementById('rainfall').value),
+    temperature: parseFloat(document.getElementById('temperature').value),
+    pesticides:  parseFloat(document.getElementById('pesticides').value),
+    income_level: incomeLevel,
+  };
+  try {
+    const r = await fetch(`${API}/predict`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    const d = await r.json();
+    if (!r.ok) { alert(d.detail || 'Prediction failed'); return; }
+    renderResult(d);
+  } catch(e) {
+    alert('Prediction failed — is the backend running?');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Predict Yield →';
+  }
+}
+
+function renderResult(d) {
+  document.getElementById('result-box').style.display = 'block';
+  document.getElementById('res-yield').textContent = d.predicted_yield.toLocaleString();
+  document.getElementById('res-sub').textContent   = `${d.error_pct} · Reference year ${d.reference_year}`;
+  document.getElementById('votes-grid').innerHTML  = Object.entries(d.model_breakdown || {})
+    .map(([n, v]) => `<div class="vote-chip">${n}: <span>${v.toLocaleString()}</span></div>`).join('');
+
+  const s = d.sustainability;
+  const scoreColor = s.carbon_intensity_score > 66 ? 'var(--moss)' : s.carbon_intensity_score > 33 ? 'var(--straw)' : 'var(--rust)';
+  document.getElementById('sustain-panel').innerHTML = `
+    <h2 class="panel-title"> Sustainability Snapshot</h2>
+    <div class="sustain-grid">
+      <div class="sustain-card"><div class="s-val">${s.water_requirement_mm} mm</div><div class="s-lbl">Water Needed</div></div>
+      <div class="sustain-card"><div class="s-val">${s.irrigation_needed_mm} mm</div><div class="s-lbl">Irrigation Gap</div></div>
+      <div class="sustain-card"><div class="s-val">${s.water_efficiency_pct}%</div><div class="s-lbl">Rain Coverage</div></div>
+      <div class="sustain-card"><div class="s-val">${s.water_productivity_t_m3}</div><div class="s-lbl">t / m³ water</div></div>
+      <div class="sustain-card"><div class="s-val" style="color:${scoreColor}">${s.carbon_intensity_score}</div><div class="s-lbl">Green Score /100</div></div>
+      <div class="sustain-card"><div class="s-val">${s.yield_t_ha}</div><div class="s-lbl">Yield t/ha</div></div>
+    </div>
+    <div class="carbon-meter">
+      <div class="meter-label"><span>Low Carbon</span><span>Carbon Intensity</span><span>High Carbon</span></div>
+      <div class="meter-track"><div class="meter-cursor" style="left:${100 - s.carbon_intensity_score}%"></div></div>
+    </div>
+    <p style="font-size:11px;color:var(--faded);font-family:'Courier Prime',monospace;">
+      ${s.income_tier} · ${s.pesticide_carbon_kg_ha} kg CO₂-eq/ha from pesticides
+    </p>`;
+
+  document.getElementById('recs-row').style.display = '';
+  document.getElementById('income-label').textContent = s.income_tier;
+  document.getElementById('rec-list').innerHTML = (s.recommendations || []).map(rec => `
+    <div class="rec-card ${rec.priority}">
+      <div class="rec-header"><span class="rec-cat">${rec.category}</span><span class="rec-pri pri-${rec.priority}">${rec.priority}</span></div>
+      <div class="rec-tip">${rec.tip}</div>
+      <div class="rec-alt"> Low-input alternative: ${rec.low_income_alt}</div>
+    </div>`).join('');
+
+  document.getElementById('result-box').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+loadMeta();
+
+// Pest Identifier
+(function () {
+  const input      = document.getElementById('pest-upload');
+  const dropZone   = document.getElementById('pest-drop-zone');
+  const preview    = document.getElementById('pest-preview-img');
+  const prompt     = document.getElementById('pest-drop-prompt');
+  const btn        = document.getElementById('pest-identify-btn');
+  const reuploadBtn = document.getElementById('pest-reupload-btn');
+  const loading    = document.getElementById('pest-loading');
+
+  if (!input || !btn) return;
+
+  let file = null;
+
+  function loadFile(f) {
+    file = f;
+    preview.src = URL.createObjectURL(f);
+    preview.style.display = 'block';
+    prompt.style.display  = 'none';
+    btn.style.display     = 'block';
+    reuploadBtn.style.display = 'block';
+    btn.textContent       = 'Identify Pest →';
+    document.getElementById('pest-result').style.display         = 'none';
+    document.getElementById('pest-treatment-panel').style.display = 'none';
+  }
+
+  reuploadBtn.addEventListener('click', () => {
+    file = null;
+    input.value = '';
+    preview.style.display    = 'none';
+    prompt.style.display     = '';
+    btn.style.display        = 'none';
+    reuploadBtn.style.display = 'none';
+    document.getElementById('pest-result').style.display          = 'none';
+    document.getElementById('pest-treatment-panel').style.display = 'none';
+  });
+
+  input.addEventListener('change', () => { if (input.files[0]) loadFile(input.files[0]); });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--rust)'; dropZone.style.background = 'rgba(181,71,29,0.04)'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'rgba(46,94,53,0.35)'; dropZone.style.background = 'var(--vellum)'; });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.style.borderColor = 'rgba(46,94,53,0.35)';
+    dropZone.style.background  = 'var(--vellum)';
+    const f = e.dataTransfer.files[0];
+    if (f && f.type.startsWith('image/')) loadFile(f);
+  });
+
+  btn.addEventListener('click', async () => {
+    if (!file) return;
+    btn.disabled    = true;
+    btn.textContent = 'Identifying...';
+    loading.style.display = 'block';
+
+    const form = new FormData();
+    form.append('file', file);
+
+    try {
+      const r = await fetch(`${API}/identify-pest`, { method: 'POST', body: form });
+      if (!r.ok) { const e = await r.json(); alert(e.detail || 'Identification failed'); return; }
+      const d = await r.json();
+      renderPestResult(d);
+    } catch(e) {
+      alert('Identification failed — is the backend running?');
+    } finally {
+      btn.disabled    = false;
+      btn.textContent = 'Identify Pest →';
+      loading.style.display = 'none';
+    }
+  });
+
+  function renderPestResult(d) {
+    document.getElementById('pest-result').style.display = 'block';
+    document.getElementById('pest-name').textContent     = d.display_name;
+    document.getElementById('pest-crops').textContent    = 'Affects: ' + d.crops;
+    document.getElementById('pest-conf').textContent     = d.confidence + '%';
+    document.getElementById('pest-severity').textContent = d.severity;
+    document.getElementById('pest-desc').textContent     = d.description;
+
+    document.getElementById('pest-alts').innerHTML = (d.alternatives || []).map(a =>
+      `<span style="font-size:10px;font-family:'Courier Prime',monospace;padding:4px 10px;border:1px solid var(--border);border-radius:100px;color:var(--faded);">${a.display} <span style="color:var(--rust)">${a.confidence}%</span></span>`
+    ).join('');
+
+    const toItems = (arr, id) => {
+      document.getElementById(id).innerHTML =
+        (arr || []).map(s =>
+          `<li style="font-size:12px;color:var(--ink);line-height:1.5;padding:8px 12px;background:#fafaf6;border-radius:4px;border-left:3px solid var(--sage);">${s}</li>`
+        ).join('') || `<li style="font-size:12px;color:var(--faded);padding:8px 12px;">None listed.</li>`;
+    };
+    toItems(d.management,  'pest-management');
+    toItems(d.chemical,    'pest-chemical');
+    toItems(d.prevention,  'pest-prevention');
+
+    document.getElementById('pest-treatment-panel').style.display = 'block';
+    document.getElementById('pest-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+})();
+
+//  Disease Detector 
+(function() {
+  const input       = document.getElementById('img-upload');
+  const dropZone    = document.getElementById('drop-zone');
+  const preview     = document.getElementById('preview-img');
+  const prompt      = document.getElementById('drop-prompt');
+  const btn         = document.getElementById('diagnose-btn');
+  const loading     = document.getElementById('diagnose-loading');
+  const reuploadBtn = document.getElementById('reupload-btn');
+  let file = null;
+
+  input.addEventListener('change', function() { if (this.files[0]) loadFile(this.files[0]); });
+  btn.addEventListener('click', runDiagnose);
+  reuploadBtn.addEventListener('click', () => {
+    file = null; input.value = '';
+    preview.style.display = 'none'; prompt.style.display = '';
+    btn.style.display = 'none'; reuploadBtn.style.display = 'none';
+    document.getElementById('disease-result').style.display  = 'none';
+    document.getElementById('treatment-panel').style.display = 'none';
+  });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.borderColor = 'var(--sage)'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = 'rgba(46,94,53,0.35)'; });
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.style.borderColor = 'rgba(46,94,53,0.35)';
+    if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+  });
+
+  function loadFile(f) {
+    file = f;
+    preview.src = URL.createObjectURL(f); preview.style.display = 'block';
+    prompt.style.display = 'none';
+    btn.style.display = 'block'; reuploadBtn.style.display = 'block';
+    document.getElementById('disease-result').style.display  = 'none';
+    document.getElementById('treatment-panel').style.display = 'none';
+  }
+
+  async function runDiagnose() {
+    if (!file) return;
+    btn.style.display = 'none'; loading.style.display = 'block';
+    try {
+      const form = new FormData(); form.append('file', file);
+      const r    = await fetch(`${API}/diagnose`, { method: 'POST', body: form });
+      const text = await r.text();
+      if (!r.ok) {
+        let msg = `Server error ${r.status}`;
+        try { msg = JSON.parse(text).detail || msg; } catch(e) {}
+        alert('Diagnosis failed:\n\n' + msg); return;
+      }
+      renderDiagnosis(JSON.parse(text));
+    } catch(e) {
+      alert('Could not reach the backend.\n\n' + e.message);
+    } finally {
+      btn.style.display = 'block'; loading.style.display = 'none';
+    }
+  }
+
+  function renderDiagnosis(d) {
+    const colour = d.severity_colour || '#c4a84a';
+    const hdr = document.getElementById('diag-header');
+    hdr.style.background = colour + '18'; hdr.style.borderLeft = `4px solid ${colour}`;
+    document.getElementById('diag-name').textContent = d.display_name || d.predicted_class;
+    document.getElementById('diag-name').style.color = colour;
+    document.getElementById('diag-crop').textContent = `Affects: ${d.crop || '—'}`;
+    document.getElementById('diag-conf').textContent = `${d.confidence}%`;
+    document.getElementById('diag-conf').style.color = colour;
+    document.getElementById('diag-severity').textContent = d.severity || '—';
+    document.getElementById('diag-severity').style.color = colour;
+    document.getElementById('diag-desc').textContent = d.description || '—';
+    document.getElementById('diag-desc').style.borderLeftColor = colour;
+
+    const alts = d.alternatives || [];
+    document.getElementById('diag-alts').innerHTML = alts.length
+      ? alts.map(a => `<span style="padding:4px 10px;border:1px solid var(--border);border-radius:100px;font-size:11px;font-family:'Courier Prime',monospace;color:var(--faded);">${a.display} <strong style="color:var(--moss)">${a.confidence}%</strong></span>`).join('')
+      : '<span style="font-size:12px;color:var(--faded)">No alternatives.</span>';
+
+    document.getElementById('disease-result').style.display = 'block';
+
+    const t = d.treatment || {};
+    function fillList(id, items) {
+      document.getElementById(id).innerHTML = (items && items.length)
+        ? items.map(s => `<li style="font-size:12px;color:var(--faded);line-height:1.5;padding:7px 10px;background:#fafaf6;border-radius:3px;border-left:2px solid var(--border);">${s}</li>`).join('')
+        : '<li style="font-size:12px;color:var(--faded);font-style:italic;">None required.</li>';
+    }
+    fillList('treat-organic',    t.organic);
+    fillList('treat-chemical',   t.chemical);
+    fillList('treat-prevention', t.prevention);
+
+    document.getElementById('treatment-panel').style.display = 'block';
+    document.getElementById('treatment-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+})();
+
+// Ask an Expert — chat
+(function () {
+  const chatHistory = [];
+
+  function mdToHtml(md) {
+    function esc(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function inline(s) {
+      return esc(s)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+        .replace(/`(.+?)`/g,       '<code style="background:rgba(46,94,53,0.08);padding:1px 5px;border-radius:3px;font-size:12px;">$1</code>');
+    }
+
+    const lines = md.split('\n');
+    const out = [];
+    let listItems = [];
+
+    function flushList() {
+      if (listItems.length) {
+        out.push('<ul style="margin:4px 0 6px 16px;padding:0;display:flex;flex-direction:column;gap:3px;">' +
+          listItems.map(t => `<li style="margin:0;">${inline(t)}</li>`).join('') +
+          '</ul>');
+        listItems = [];
+      }
+    }
+
+    for (const raw of lines) {
+      const line = raw.trimEnd();
+
+      // skip table rows
+      if (/^\|/.test(line)) continue;
+
+      // horizontal rule
+      if (/^---+$/.test(line)) {
+        flushList();
+        out.push('<hr style="border:none;border-top:1px solid var(--border);margin:8px 0;">');
+        continue;
+      }
+
+      // headings
+      const h3 = line.match(/^### (.+)/);
+      const h2 = line.match(/^## (.+)/);
+      const h1 = line.match(/^# (.+)/);
+      if (h1 || h2 || h3) {
+        flushList();
+        const txt = inline((h1||h2||h3)[1]);
+        const sz  = h1 ? '15px' : h2 ? '14px' : '13px';
+        out.push(`<div style="font-size:${sz};font-weight:700;color:var(--moss);margin-top:10px;margin-bottom:2px;">${txt}</div>`);
+        continue;
+      }
+
+      // blockquote
+      const bq = line.match(/^>\s*(.*)/);
+      if (bq) {
+        flushList();
+        out.push(`<div style="border-left:3px solid var(--border);padding:3px 10px;color:var(--faded);font-style:italic;font-size:12px;margin:3px 0;">${inline(bq[1])}</div>`);
+        continue;
+      }
+
+      // bullet list item
+      const li = line.match(/^[-*+] (.+)/);
+      if (li) { listItems.push(li[1]); continue; }
+
+      // blank line — just flush any pending list, add no extra spacing
+      if (line.trim() === '') { flushList(); continue; }
+
+      // regular paragraph line
+      flushList();
+      out.push(`<p style="margin:2px 0;line-height:1.6;">${inline(line)}</p>`);
+    }
+
+    flushList();
+    return out.join('');
+  }
+
+  function appendMessage(role, text) {
+    const empty = document.getElementById('chat-empty');
+    if (empty) empty.remove();
+
+    const msgs = document.getElementById('chat-messages');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg ' + role;
+
+    const roleLabel = document.createElement('div');
+    roleLabel.className = 'chat-role';
+    roleLabel.textContent = role === 'user' ? 'You' : 'Expert';
+
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble';
+    if (role === 'assistant' && text) {
+      bubble.innerHTML = mdToHtml(text);
+    } else {
+      bubble.textContent = text;
+    }
+
+    wrap.appendChild(roleLabel);
+    wrap.appendChild(bubble);
+    msgs.appendChild(wrap);
+    msgs.scrollTop = msgs.scrollHeight;
+    return bubble;
+  }
+
+  window.chatChip = function(btn) {
+    document.getElementById('chat-input').value = btn.textContent;
+    sendChat();
+  };
+
+  window.sendChat = async function() {
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send-btn');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    input.value = '';
+    sendBtn.disabled = true;
+    appendMessage('user', msg);
+
+    const assistantBubble = appendMessage('assistant', '');
+    assistantBubble.textContent = '';
+    const thinkingSpan = document.createElement('span');
+    thinkingSpan.style.cssText = 'color:var(--faded);font-style:italic;font-size:12px;';
+    thinkingSpan.textContent = 'Thinking...';
+    assistantBubble.appendChild(thinkingSpan);
+
+    try {
+      const resp = await fetch(`${API}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, history: chatHistory }),
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ detail: `Error ${resp.status}` }));
+        assistantBubble.textContent = 'Error: ' + (err.detail || 'Something went wrong.');
+        sendBtn.disabled = false;
+        return;
+      }
+
+      thinkingSpan.remove();
+      let fullText = '';
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          const payload = line.slice(6).trim();
+          if (payload === '[DONE]') break;
+          try {
+            const obj = JSON.parse(payload);
+            if (obj.error) {
+              assistantBubble.textContent = 'Error: ' + obj.error;
+              break;
+            }
+            if (obj.text) {
+              fullText += obj.text;
+              assistantBubble.innerHTML = mdToHtml(fullText);
+              document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+            }
+          } catch(e) { /* ignore parse errors */ }
+        }
+      }
+
+      chatHistory.push({ role: 'user', content: msg });
+      chatHistory.push({ role: 'assistant', content: fullText });
+
+    } catch(e) {
+      assistantBubble.textContent = 'Could not reach the backend: ' + e.message;
+    } finally {
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  };
+})();
+</script>
+</body>
+</html>
