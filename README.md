@@ -1,4 +1,4 @@
-# Crop Companion
+# AI Crop Companion
 
 Crop Companion is a FastAPI application that combines:
 
@@ -96,5 +96,4 @@ This creates:
 - Disease and pest inference expect the trained model files to be present in [models](/Users/gargipande/AI%20crop%20guide/models).
 - The chat endpoint requires `ANTHROPIC_API_KEY` in the environment.
 
-# AI-Crop-Companion
-# AI-Crop-Companion
+
